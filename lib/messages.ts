@@ -1,4 +1,5 @@
 import type { UIMessage } from "ai";
+import { composeAssistantParts } from "@/lib/assistant-parts";
 import { getSql } from "@/lib/db";
 
 function isUiRole(value: unknown): value is UIMessage["role"] {
@@ -32,7 +33,10 @@ export function toUiMessage(row: Record<string, unknown>): UIMessage | null {
   return {
     id: row.id,
     role: row.role,
-    parts: parts as UIMessage["parts"],
+    parts:
+      row.role === "assistant"
+        ? composeAssistantParts(parts as UIMessage["parts"])
+        : (parts as UIMessage["parts"]),
   };
 }
 

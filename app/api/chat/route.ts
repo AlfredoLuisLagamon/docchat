@@ -2,7 +2,6 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
-  stepCountIs,
   streamText,
 } from "ai";
 import { google } from "@ai-sdk/google";
@@ -28,6 +27,12 @@ import {
 } from "@/lib/retrieval/grounded-prompt";
 import { createPresentEvidenceTool } from "@/lib/retrieval/present-evidence";
 import { retrieveChunks } from "@/lib/retrieval/retrieve-chunks";
+import {
+  composeAssistantParts,
+  omitTextAfterFirstAnswer,
+  stopAfterFirstTextStep,
+  readableFromAsync,
+} from "@/lib/assistant-parts";
 import { safeGenerationError } from "@/lib/safe-ui";
 import { getVisitorId } from "@/lib/visitor";
 
@@ -203,7 +208,7 @@ export async function POST(request: Request) {
     system: groundedSystemPrompt(sourceContext),
     messages: await convertToModelMessages(uiMessages, { tools }),
     tools,
-    stopWhen: stepCountIs(2),
+    stopWhen: stopAfterFirstTextStep,
   });
 
   const assistantId = crypto.randomUUID();
@@ -218,17 +223,25 @@ export async function POST(request: Request) {
         data: { items: citationSources },
       });
       writer.merge(
-        result.toUIMessageStream({
-          sendStart: false,
-          onError: (error) => safeGenerationError(error),
-        }),
+        readableFromAsync(
+          omitTextAfterFirstAnswer(
+            result.toUIMessageStream({
+              sendStart: false,
+              onError: (error) => safeGenerationError(error),
+            }),
+          ),
+        ),
       );
     },
     onFinish: async ({ isAborted, responseMessage }) => {
-      if (isAborted || !shouldPersistAssistant(responseMessage)) {
+      const assistant = {
+        ...responseMessage,
+        parts: composeAssistantParts(responseMessage.parts),
+      };
+      if (isAborted || !shouldPersistAssistant(assistant)) {
         return;
       }
-      await upsertUiMessage(chatId, responseMessage);
+      await upsertUiMessage(chatId, assistant);
       await touchChatUpdatedAt(chatId);
     },
   });
