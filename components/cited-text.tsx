@@ -48,7 +48,7 @@ export function CitedText({
         return (
           <sup key={index} className="whitespace-nowrap">
             <span
-              className="mx-0.5 inline-flex min-w-4 items-center justify-center rounded border border-border bg-surface-muted px-1 text-[0.65rem] font-medium text-citation"
+              className="mx-0.5 inline-flex min-w-3.5 items-center justify-center rounded-[5px] bg-accent-soft px-1 py-px text-[0.65rem] font-medium leading-none text-accent"
               title={`${label}\n${source.excerpt}`}
               aria-label={label}
             >

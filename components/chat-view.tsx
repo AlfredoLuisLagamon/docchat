@@ -223,12 +223,14 @@ export function ChatView({
   }
 
   return (
-    <main className="mx-auto flex h-dvh w-full min-w-0 max-w-xl flex-col overflow-x-hidden px-4 py-6">
-      <header className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">docchat</h1>
+    <main className="mx-auto flex h-dvh w-full min-w-0 max-w-2xl flex-col overflow-x-hidden px-4">
+      <header className="flex items-center justify-between gap-3 border-b border-border py-6">
+        <h1 className="truncate text-[19px] font-semibold tracking-tight text-foreground">
+          docchat
+        </h1>
         <button
           type="button"
-          className="shrink-0 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-surface-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:bg-surface-muted disabled:text-muted"
+          className="shrink-0 rounded-[8px] border border-border-strong bg-surface px-3 py-1.5 text-[13px] text-foreground hover:bg-surface-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:text-muted"
           onClick={() => void startNewChat()}
           disabled={creatingChat}
         >
@@ -236,11 +238,13 @@ export function ChatView({
         </button>
       </header>
 
-      <DocumentList documents={visibleDocuments} />
+      <div className="pt-4">
+        <DocumentList documents={visibleDocuments} />
+      </div>
 
       <div
         ref={scrollerRef}
-        className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto pb-4"
+        className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto pb-4"
         onScroll={() => {
           const el = scrollerRef.current;
           if (!el) {
@@ -261,7 +265,7 @@ export function ChatView({
             return (
               <div
                 key={message.id}
-                className="max-w-[90%] self-end break-words rounded-lg bg-surface-muted px-3 py-2 text-sm text-foreground"
+                className="max-w-[80%] self-end break-words rounded-[10px] bg-accent-soft px-3 py-2 text-[15px] leading-[1.65] text-foreground"
               >
                 {renderUserText(message)}
               </div>
@@ -272,7 +276,10 @@ export function ChatView({
           }
           return (
             <div key={message.id} className="w-full min-w-0 self-start">
-              <div className="min-w-0 break-words rounded-lg bg-surface/70 px-3 py-2 text-sm leading-6 text-foreground">
+              <p className="mb-1.5 text-[12px] font-medium text-muted-light">
+                docchat
+              </p>
+              <div className="min-w-0 max-w-prose break-words text-[15px] leading-[1.65] text-foreground">
                 {message.parts.map((part, index) =>
                   part.type === "text" && typeof part.text === "string" ? (
                     <CitedText
@@ -293,22 +300,30 @@ export function ChatView({
             aria-live="polite"
           >
             <span
-              className="thinking-dot size-1.5 shrink-0 rounded-full bg-primary"
+              className="thinking-dot size-1.5 shrink-0 rounded-full bg-accent"
               aria-hidden
             />
             Thinking…
           </p>
         ) : null}
         {generationError || error ? (
-          <p className="text-sm text-danger" role="alert">
-            {generationError ?? safeGenerationError(error)}
-          </p>
+          <div
+            className="rounded-[8px] border border-danger-border bg-danger-soft px-3 py-2"
+            role="alert"
+          >
+            <p className="text-[13px] font-medium text-danger">
+              Unable to generate response
+            </p>
+            <p className="mt-0.5 text-[13px] text-danger">
+              {generationError ?? safeGenerationError(error)}
+            </p>
+          </div>
         ) : null}
         <div ref={bottomRef} />
       </div>
 
       <form
-        className="flex min-w-0 flex-wrap items-end gap-2 rounded-xl border border-border bg-surface/90 p-2 text-foreground shadow-sm shadow-[color-mix(in_srgb,var(--violet)_12%,transparent)]"
+        className="mb-4 min-w-0 rounded-[13px] border border-border bg-surface text-foreground shadow-[0_1px_2px_rgba(32,33,43,0.04)] focus-within:border-accent"
         onSubmit={(event) => {
           event.preventDefault();
           const text = input.trim();
@@ -338,44 +353,53 @@ export function ChatView({
             void uploadFile(event.currentTarget.files?.[0]);
           }}
         />
-        <button
-          className="rounded-lg px-2 py-2 text-sm text-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:text-muted"
-          type="button"
-          disabled={uploading}
-          onClick={openFilePicker}
-        >
-          Attach
-        </button>
         <input
-          className="min-w-0 flex-1 rounded-lg bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="w-full min-w-0 bg-transparent px-3.5 pt-3 pb-2 text-[15px] text-foreground outline-none placeholder:text-muted-light"
           value={input}
           placeholder={
-            hasReadyDocument ? "Message…" : "Attach a document to chat"
+            hasReadyDocument
+              ? "Ask about this document..."
+              : "Attach a document to chat"
           }
           aria-label="Message"
           onChange={(event) => setInput(event.currentTarget.value)}
         />
-        <button
-          className="btn-cta rounded-lg px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-          type="submit"
-          disabled={!canSend}
-        >
-          Send
-        </button>
+        <div className="flex min-w-0 items-center justify-between gap-2 px-2 pb-2">
+          <button
+            className="rounded-[8px] px-2 py-1.5 text-[13px] text-muted hover:bg-surface-subtle hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:text-muted-light"
+            type="button"
+            disabled={uploading}
+            onClick={openFilePicker}
+          >
+            + Attach
+          </button>
+          <button
+            className="btn-cta shrink-0 rounded-[8px] px-3 py-1.5 text-[13px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            type="submit"
+            disabled={!canSend}
+          >
+            Send ↑
+          </button>
+        </div>
       </form>
-      <div className="mt-2 min-h-5 text-xs text-muted" aria-live="polite">
+      <div className="min-h-5 pb-4 text-[13px] text-muted" aria-live="polite">
         {uploadError ? (
-          <p className="text-danger" role="alert">
-            {uploadError}
-          </p>
-        )         : pendingUpload ? (
-          <p className="flex items-center gap-2">
+          <div
+            className="rounded-[8px] border border-danger-border bg-danger-soft px-3 py-2"
+            role="alert"
+          >
+            <p className="text-[13px] text-danger">{uploadError}</p>
+          </div>
+        ) : pendingUpload ? (
+          <p className="flex min-w-0 items-center gap-2">
             <span
-              className="thinking-dot size-1.5 shrink-0 rounded-full bg-violet"
+              className="thinking-dot size-1.5 shrink-0 rounded-full bg-accent"
               aria-hidden
             />
-            {pendingUpload.filename} ·{" "}
-            {pendingUpload.status === "parsing" ? "Parsing…" : "Embedding…"}
+            <span className="min-w-0 truncate">
+              {pendingUpload.filename} ·{" "}
+              {pendingUpload.status === "parsing" ? "Parsing…" : "Embedding…"}
+            </span>
           </p>
         ) : null}
       </div>

@@ -56,11 +56,11 @@ export function EvidenceList({ message }: { message: DocChatUIMessage }) {
 
   if (sources.length > 0) {
     return (
-      <section className="mt-2 min-w-0" aria-label="Evidence">
-        <h2 className="mb-1.5 text-[0.7rem] font-medium tracking-wide text-muted">
+      <section className="mt-3 min-w-0" aria-label="Evidence">
+        <h2 className="border-b border-border pb-1.5 text-[13px] font-medium text-muted">
           Evidence
         </h2>
-        <div className="space-y-1.5">
+        <div className="divide-y divide-border">
           {sources.map((source, index) => (
             <EvidenceCard key={`${source.id}-${index}`} source={source} />
           ))}
@@ -71,13 +71,13 @@ export function EvidenceList({ message }: { message: DocChatUIMessage }) {
 
   if (selecting) {
     return (
-      <p className="mt-2 text-[0.7rem] text-muted">Selecting evidence…</p>
+      <p className="mt-3 text-[13px] text-muted">Selecting evidence…</p>
     );
   }
 
   if (failed) {
     return (
-      <p className="mt-2 text-[0.7rem] text-muted">Evidence unavailable.</p>
+      <p className="mt-3 text-[13px] text-muted">Evidence unavailable.</p>
     );
   }
 

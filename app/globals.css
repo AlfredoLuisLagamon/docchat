@@ -1,58 +1,51 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f7ff;
-  --foreground: #27224d;
+  --background: #f8f8fa;
   --surface: #ffffff;
-  --surface-muted: #f0f1ff;
-  --muted: #74708f;
-  --primary: #7c8cff;
-  --primary-hover: #6c7af2;
-  --primary-cta: color-mix(in srgb, #6c7af2 72%, #27224d 28%);
-  --violet: #a56bff;
-  --pink: #ee8edb;
-  --border: #e3e3f5;
-  --focus: #8b7cff;
-  --danger: #9f1239;
-  --citation: color-mix(in srgb, #a56bff 50%, #27224d 50%);
-  --on-primary: #ffffff;
+  --surface-subtle: #f4f3f8;
+  --foreground: #20212b;
+  --muted: #6f7180;
+  --muted-light: #9698a5;
+  --border: #e4e3e8;
+  --border-strong: #d6d4dc;
+  --accent: #675fd7;
+  --accent-hover: #5951c6;
+  --accent-soft: #eeecff;
+  --danger: #b4233c;
+  --danger-soft: #fdf4f5;
+  --danger-border: #f0d5da;
+  --on-accent: #ffffff;
+  --focus: #675fd7;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
-  --color-surface-muted: var(--surface-muted);
+  --color-surface-subtle: var(--surface-subtle);
   --color-muted: var(--muted);
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
-  --color-primary-cta: var(--primary-cta);
-  --color-violet: var(--violet);
-  --color-pink: var(--pink);
+  --color-muted-light: var(--muted-light);
   --color-border: var(--border);
-  --color-focus: var(--focus);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
-  --color-citation: var(--citation);
-  --color-on-primary: var(--on-primary);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-border: var(--danger-border);
+  --color-on-accent: var(--on-accent);
+  --color-focus: var(--focus);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  color-scheme: light;
+}
+
 body {
   background-color: var(--background);
-  background-image:
-    radial-gradient(
-      ellipse 90% 55% at 8% -8%,
-      color-mix(in srgb, var(--pink) 16%, transparent),
-      transparent 58%
-    ),
-    radial-gradient(
-      ellipse 70% 50% at 100% 0%,
-      color-mix(in srgb, var(--violet) 12%, transparent),
-      transparent 52%
-    ),
-    linear-gradient(180deg, #f7f7ff 0%, #f4f2ff 100%);
-  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
@@ -72,22 +65,15 @@ body {
 }
 
 .btn-cta {
-  background-color: var(--primary-cta);
-  background-image: linear-gradient(
-    135deg,
-    var(--primary-cta),
-    color-mix(in srgb, var(--violet) 30%, var(--primary-cta))
-  );
-  color: var(--on-primary);
+  background-color: var(--accent);
+  color: var(--on-accent);
 }
 
 .btn-cta:hover:not(:disabled) {
-  background-image: none;
-  background-color: var(--primary-hover);
+  background-color: var(--accent-hover);
 }
 
 .btn-cta:disabled {
-  background-image: none;
-  background-color: var(--surface-muted);
+  background-color: var(--surface-subtle);
   color: var(--muted);
 }

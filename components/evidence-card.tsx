@@ -17,41 +17,35 @@ export function EvidenceCard({ source }: { source: EvidenceSource }) {
   const label = `${source.filename} · ${source.locator}`;
 
   return (
-    <div
-      className={`min-w-0 rounded-lg border bg-surface ${
-        open ? "border-violet/40" : "border-border"
-      }`}
-    >
+    <div className={`min-w-0 ${open ? "bg-surface-subtle" : ""}`}>
       <button
         type="button"
-        className="flex w-full min-w-0 items-start gap-2 px-2.5 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        className="flex w-full min-w-0 items-start gap-2 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         aria-expanded={open}
         aria-controls={panelId}
+        aria-label={label}
         onClick={() => setOpen((current) => !current)}
       >
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-xs font-medium text-foreground">
-            {label}
+          <span className="block truncate text-[13px] font-medium text-foreground">
+            {source.filename}
+          </span>
+          <span className="mt-0.5 block break-words text-[12px] text-muted">
+            {source.locator}
           </span>
           {!open ? (
-            <span className="mt-0.5 line-clamp-2 break-words text-[0.7rem] leading-4 text-muted">
+            <span className="mt-1 line-clamp-2 break-words text-[13px] leading-5 text-muted">
               {excerptPreview(source.excerpt)}
             </span>
           ) : null}
         </span>
-        <span className="mt-0.5 shrink-0 text-[0.65rem] text-muted" aria-hidden>
-          {open ? "▴" : "▾"}
+        <span className="mt-0.5 shrink-0 text-[12px] text-muted-light" aria-hidden>
+          {open ? "⌃" : "⌄"}
         </span>
       </button>
       {open ? (
-        <div id={panelId} className="border-t border-border px-2.5 py-2">
-          <p className="break-words text-xs font-medium text-foreground">
-            {source.filename}
-          </p>
-          <p className="break-words text-[0.7rem] text-muted">
-            {source.locator}
-          </p>
-          <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-5 text-foreground">
+        <div id={panelId} className="pb-3">
+          <p className="whitespace-pre-wrap break-words text-[13px] leading-5 text-foreground">
             {source.excerpt}
           </p>
         </div>
