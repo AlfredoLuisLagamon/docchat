@@ -1,3 +1,5 @@
+import { isRateLimitedGenerationError } from "@/lib/chat-error";
+
 export function isUnsafeErrorText(text: string) {
   return /stack|api key|database_url|econn|internal|request id|googleapis|json\.parse|at http|neon|traceback/i.test(
     text,
@@ -12,30 +14,7 @@ export function safeIngestError(message: string | null | undefined) {
 }
 
 export function safeGenerationError(error: unknown) {
-  const status =
-    typeof error === "object" &&
-    error !== null &&
-    "statusCode" in error &&
-    typeof error.statusCode === "number"
-      ? error.statusCode
-      : undefined;
-  const text =
-    error instanceof Error
-      ? error.message
-      : typeof error === "string"
-        ? error
-        : "";
-  const lower = text.toLowerCase();
-  if (
-    status === 429 ||
-    lower.includes("429") ||
-    lower.includes("resource_exhausted") ||
-    lower.includes("quota") ||
-    lower.includes("rate-limit") ||
-    lower.includes("rate limit") ||
-    lower.includes("rate_limited") ||
-    lower.includes("too many requests")
-  ) {
+  if (isRateLimitedGenerationError(error)) {
     return "The AI service is temporarily rate-limited. Please try again shortly.";
   }
   return "I couldn't generate a response right now. Please try again.";

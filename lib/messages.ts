@@ -1,6 +1,7 @@
 import type { UIMessage } from "ai";
 import { composeAssistantParts } from "@/lib/assistant-parts";
 import { getSql } from "@/lib/db";
+import { isVisitorId } from "@/lib/visitor-cookie";
 
 function isUiRole(value: unknown): value is UIMessage["role"] {
   return value === "user" || value === "assistant" || value === "system";
@@ -52,6 +53,11 @@ export function isNonEmptyUserMessage(message: UIMessage) {
 }
 
 export async function upsertUiMessage(chatId: string, message: UIMessage) {
+  if (!isVisitorId(message.id) || !isVisitorId(chatId)) {
+    throw Object.assign(new Error("Invalid message id."), {
+      name: "InvalidMessageIdError",
+    });
+  }
   const sql = getSql();
   await sql.query(
     `insert into messages (id, chat_id, role, parts)
@@ -68,6 +74,10 @@ export async function getCompletedAssistantForUserTurn(
   chatId: string,
   userMessageId: string,
 ): Promise<UIMessage | null> {
+  if (!isVisitorId(chatId) || !isVisitorId(userMessageId)) {
+    return null;
+  }
+
   const sql = getSql();
   const rows = await sql.query(
     `select a.id, a.role, a.parts

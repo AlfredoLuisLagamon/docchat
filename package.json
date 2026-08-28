@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test lib/assistant-parts.test.ts",
+    "test": "node --experimental-strip-types --test lib/assistant-parts.test.ts lib/chat-error.test.ts",
     "db:setup": "node scripts/setup-db.mjs",
     "db:verify": "node scripts/verify-db.mjs"
   },

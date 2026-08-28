@@ -33,6 +33,7 @@ import {
   omitTextAfterFirstAnswerTransform,
   stopAfterFirstTextStep,
 } from "@/lib/assistant-parts";
+import { logChatFailure } from "@/lib/chat-error";
 import { safeGenerationError } from "@/lib/safe-ui";
 import { getVisitorId } from "@/lib/visitor";
 
@@ -167,15 +168,26 @@ export async function POST(request: Request) {
     return Response.json({ error: "Empty message" }, { status: 400 });
   }
 
-  const completedAssistant = await getCompletedAssistantForUserTurn(
-    chatId,
-    userMessage.id,
-  );
+  let completedAssistant;
+  try {
+    completedAssistant = await getCompletedAssistantForUserTurn(
+      chatId,
+      userMessage.id,
+    );
+  } catch (error) {
+    logChatFailure("persistence", error);
+    throw error;
+  }
   if (completedAssistant) {
     return replayCompletedAssistant(completedAssistant as DocChatUIMessage);
   }
 
-  await upsertUiMessage(chatId, userMessage);
+  try {
+    await upsertUiMessage(chatId, userMessage);
+  } catch (error) {
+    logChatFailure("persistence", error);
+    throw error;
+  }
 
   const hasReadyDocument = await chatHasReadyDocument(owned.id);
   if (!hasReadyDocument) {
@@ -190,6 +202,7 @@ export async function POST(request: Request) {
   try {
     retrieved = await retrieveChunks(owned.id, question);
   } catch (error) {
+    logChatFailure("retrieval", error);
     return Response.json(
       { error: safeGenerationError(error) },
       { status: 503 },
@@ -203,19 +216,33 @@ export async function POST(request: Request) {
   });
   const tools = { presentEvidence };
 
+  let modelMessages;
+  try {
+    modelMessages = await convertToModelMessages(uiMessages, { tools });
+  } catch (error) {
+    logChatFailure("generation", error);
+    throw error;
+  }
+
   const result = streamText({
     model: google(CHAT_MODEL),
     system: groundedSystemPrompt(sourceContext),
-    messages: await convertToModelMessages(uiMessages, { tools }),
+    messages: modelMessages,
     tools,
     stopWhen: stopAfterFirstTextStep,
+    onError({ error }) {
+      logChatFailure("generation", error);
+    },
   });
 
   const assistantId = crypto.randomUUID();
   const stream = createUIMessageStream<DocChatUIMessage>({
     originalMessages: uiMessages,
     generateId: () => assistantId,
-    onError: (error) => safeGenerationError(error),
+    onError: (error) => {
+      logChatFailure("generation", error);
+      return safeGenerationError(error);
+    },
     execute({ writer }) {
       writer.write({ type: "start", messageId: assistantId });
       writer.write({
@@ -224,7 +251,10 @@ export async function POST(request: Request) {
       });
       const modelStream = result.toUIMessageStream({
         sendStart: false,
-        onError: (error) => safeGenerationError(error),
+        onError: (error) => {
+          logChatFailure("generation", error);
+          return safeGenerationError(error);
+        },
       });
       writer.merge(
         modelStream.pipeThrough(
@@ -240,8 +270,13 @@ export async function POST(request: Request) {
       if (isAborted || !shouldPersistAssistant(assistant)) {
         return;
       }
-      await upsertUiMessage(chatId, assistant);
-      await touchChatUpdatedAt(chatId);
+      try {
+        await upsertUiMessage(chatId, assistant);
+        await touchChatUpdatedAt(chatId);
+      } catch (error) {
+        logChatFailure("persistence", error);
+        throw error;
+      }
     },
   });
 

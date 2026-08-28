@@ -77,6 +77,7 @@ export function ChatView({
 
   const { messages, sendMessage, status, error } = useChat<DocChatUIMessage>({
     id: chatId,
+    generateId: () => crypto.randomUUID(),
     messages: initialMessages.filter(isUiMessage) as DocChatUIMessage[],
     transport,
     onError: (err) => {

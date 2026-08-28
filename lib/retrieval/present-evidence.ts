@@ -1,5 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { logChatFailure } from "@/lib/chat-error";
 import { getSql } from "@/lib/db";
 import { citationExcerpt } from "@/lib/retrieval/build-citation-sources";
 import type { RetrievedChunk } from "@/lib/retrieval/retrieve-chunks";
@@ -97,11 +98,16 @@ export function createPresentEvidenceTool(input: {
       "Present the strongest document chunks that support the answer. Pass only Source IDs from the current retrieved sources. Do not pass filenames, pages, or excerpts.",
     inputSchema: presentEvidenceInputSchema,
     execute: async ({ sourceIds }) => {
-      return resolvePresentEvidence({
-        chatId: input.chatId,
-        allowedSourceIds,
-        sourceIds,
-      });
+      try {
+        return await resolvePresentEvidence({
+          chatId: input.chatId,
+          allowedSourceIds,
+          sourceIds,
+        });
+      } catch (error) {
+        logChatFailure("presentEvidence", error);
+        throw error;
+      }
     },
   });
 }
