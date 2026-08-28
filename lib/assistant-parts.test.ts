@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   composeAssistantParts,
-  omitTextAfterFirstAnswer,
+  omitTextAfterFirstAnswerTransform,
   stopAfterFirstTextStep,
 } from "./assistant-parts.ts";
 
@@ -68,19 +68,26 @@ test("stop after first step when that step already produced text", () => {
 });
 
 test("stream omits a second text part after an answer already streamed", async () => {
-  async function* chunks() {
-    yield { type: "text-start", id: "a" };
-    yield { type: "text-delta", id: "a", delta: "Answer [1]." };
-    yield { type: "text-end", id: "a" };
-    yield { type: "tool-output-available", toolCallId: "call-1" };
-    yield { type: "text-start", id: "b" };
-    yield { type: "text-delta", id: "b", delta: "Answer [1]." };
-    yield { type: "text-end", id: "b" };
-  }
+  const input = ReadableStream.from([
+    { type: "text-start", id: "a" },
+    { type: "text-delta", id: "a", delta: "Answer [1]." },
+    { type: "text-end", id: "a" },
+    { type: "tool-output-available", toolCallId: "call-1" },
+    { type: "text-start", id: "b" },
+    { type: "text-delta", id: "b", delta: "Answer [1]." },
+    { type: "text-end", id: "b" },
+  ]);
 
+  const reader = input
+    .pipeThrough(omitTextAfterFirstAnswerTransform())
+    .getReader();
   const types: string[] = [];
-  for await (const chunk of omitTextAfterFirstAnswer(chunks())) {
-    types.push(chunk.type);
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) {
+      break;
+    }
+    types.push(value.type);
   }
   assert.deepEqual(types, [
     "text-start",

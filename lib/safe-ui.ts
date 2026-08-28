@@ -12,6 +12,13 @@ export function safeIngestError(message: string | null | undefined) {
 }
 
 export function safeGenerationError(error: unknown) {
+  const status =
+    typeof error === "object" &&
+    error !== null &&
+    "statusCode" in error &&
+    typeof error.statusCode === "number"
+      ? error.statusCode
+      : undefined;
   const text =
     error instanceof Error
       ? error.message
@@ -20,12 +27,14 @@ export function safeGenerationError(error: unknown) {
         : "";
   const lower = text.toLowerCase();
   if (
+    status === 429 ||
     lower.includes("429") ||
     lower.includes("resource_exhausted") ||
     lower.includes("quota") ||
     lower.includes("rate-limit") ||
     lower.includes("rate limit") ||
-    lower.includes("rate_limited")
+    lower.includes("rate_limited") ||
+    lower.includes("too many requests")
   ) {
     return "The AI service is temporarily rate-limited. Please try again shortly.";
   }

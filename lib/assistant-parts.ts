@@ -34,57 +34,40 @@ export function stopAfterFirstTextStep({
   return typeof text === "string" && text.trim().length > 0;
 }
 
-export function readableFromAsync<T>(iterable: AsyncIterable<T>) {
-  const iterator = iterable[Symbol.asyncIterator]();
-  return new ReadableStream<T>({
-    async pull(controller) {
-      const { value, done } = await iterator.next();
-      if (done) {
-        controller.close();
-        return;
-      }
-      controller.enqueue(value);
-    },
-    async cancel() {
-      await iterator.return?.();
-    },
-  });
-}
-
-export async function* omitTextAfterFirstAnswer<T extends { type: string }>(
-  chunks: AsyncIterable<T>,
-) {
+export function omitTextAfterFirstAnswerTransform<T extends { type: string }>() {
   const droppedIds = new Set<string>();
   let keptNonEmptyText = false;
 
-  for await (const chunk of chunks) {
-    if (chunk.type === "text-start") {
-      const id = "id" in chunk ? String(chunk.id) : "";
-      if (keptNonEmptyText) {
-        droppedIds.add(id);
-        continue;
+  return new TransformStream<T, T>({
+    transform(chunk, controller) {
+      if (chunk.type === "text-start") {
+        const id = "id" in chunk ? String(chunk.id) : "";
+        if (keptNonEmptyText) {
+          droppedIds.add(id);
+          return;
+        }
+        controller.enqueue(chunk);
+        return;
       }
-      yield chunk;
-      continue;
-    }
 
-    if (chunk.type === "text-delta" || chunk.type === "text-end") {
-      const id = "id" in chunk ? String(chunk.id) : "";
-      if (droppedIds.has(id)) {
-        continue;
+      if (chunk.type === "text-delta" || chunk.type === "text-end") {
+        const id = "id" in chunk ? String(chunk.id) : "";
+        if (droppedIds.has(id)) {
+          return;
+        }
+        if (
+          chunk.type === "text-delta" &&
+          "delta" in chunk &&
+          typeof chunk.delta === "string" &&
+          chunk.delta.trim().length > 0
+        ) {
+          keptNonEmptyText = true;
+        }
+        controller.enqueue(chunk);
+        return;
       }
-      if (
-        chunk.type === "text-delta" &&
-        "delta" in chunk &&
-        typeof chunk.delta === "string" &&
-        chunk.delta.trim().length > 0
-      ) {
-        keptNonEmptyText = true;
-      }
-      yield chunk;
-      continue;
-    }
 
-    yield chunk;
-  }
+      controller.enqueue(chunk);
+    },
+  });
 }

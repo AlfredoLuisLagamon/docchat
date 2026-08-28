@@ -3,6 +3,7 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   streamText,
+  type InferUIMessageChunk,
 } from "ai";
 import { google } from "@ai-sdk/google";
 import { CHAT_MODEL } from "@/lib/ai-config";
@@ -29,9 +30,8 @@ import { createPresentEvidenceTool } from "@/lib/retrieval/present-evidence";
 import { retrieveChunks } from "@/lib/retrieval/retrieve-chunks";
 import {
   composeAssistantParts,
-  omitTextAfterFirstAnswer,
+  omitTextAfterFirstAnswerTransform,
   stopAfterFirstTextStep,
-  readableFromAsync,
 } from "@/lib/assistant-parts";
 import { safeGenerationError } from "@/lib/safe-ui";
 import { getVisitorId } from "@/lib/visitor";
@@ -222,15 +222,14 @@ export async function POST(request: Request) {
         type: "data-sources",
         data: { items: citationSources },
       });
+      const modelStream = result.toUIMessageStream({
+        sendStart: false,
+        onError: (error) => safeGenerationError(error),
+      });
       writer.merge(
-        readableFromAsync(
-          omitTextAfterFirstAnswer(
-            result.toUIMessageStream({
-              sendStart: false,
-              onError: (error) => safeGenerationError(error),
-            }),
-          ),
-        ),
+        modelStream.pipeThrough(
+          omitTextAfterFirstAnswerTransform(),
+        ) as ReadableStream<InferUIMessageChunk<DocChatUIMessage>>,
       );
     },
     onFinish: async ({ isAborted, responseMessage }) => {
